@@ -7,6 +7,7 @@ public:
 	Texture(const char* FileLoc);
 	bool LoadTexture();
 	bool LoadTextureA();
+	bool LoadTextureFromMemory(const unsigned char* data, unsigned int dataSize);
 	void UseTexture();
 	void ClearTexture();
 	~Texture();

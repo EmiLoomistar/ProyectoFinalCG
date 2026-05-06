@@ -51,6 +51,23 @@ Camera camera;
 
 Texture pisoTexture;     // Textura que se aplica al plano del piso
 Model lamp_model;        // Modelo 3D de una lámpara
+
+// Modelo Joker (Ladrones Fantasma).
+Model Joker_M;
+
+// Escenario
+Model CentralBuilding_M;
+Model SteampunkHouse_M;
+Model SteampunkHouse2_M;
+Model SteampunkPostOffice_M;
+Model SteampunkProp_M;
+Model BazaarSteampunk_M;
+Model TimePortal_M;
+Model Pilar_M;
+Model Cervantes_M;
+Model Poe_M;
+Model Shakespeare_M;
+
 Skybox skybox;           // Skybox (fondo envolvente)
 Material Material_opaco; // Material con bajo brillo especular
 
@@ -95,9 +112,9 @@ void CreateObjects()
 	GLfloat floorVertices[] = {
 		//  x       y       z        s      t       nx    ny     nz
 		-10.0f,  0.0f, -10.0f,   0.0f,  0.0f,   0.0f, -1.0f,  0.0f,
-		 10.0f,  0.0f, -10.0f,  10.0f,  0.0f,   0.0f, -1.0f,  0.0f,
-		-10.0f,  0.0f,  10.0f,   0.0f, 10.0f,   0.0f, -1.0f,  0.0f,
-		 10.0f,  0.0f,  10.0f,  10.0f, 10.0f,   0.0f, -1.0f,  0.0f
+		 10.0f,  0.0f, -10.0f,   1.0f,  0.0f,   0.0f, -1.0f,  0.0f,
+		-10.0f,  0.0f,  10.0f,   0.0f,  1.0f,   0.0f, -1.0f,  0.0f,
+		 10.0f,  0.0f,  10.0f,   1.0f,  1.0f,   0.0f, -1.0f,  0.0f
 	};
 
 	// Se crea el mesh del piso y se agrega a la lista (índice 0)
@@ -179,24 +196,53 @@ int main()
 
 	// --- 4. CARGA DE TEXTURAS ---
 	// LoadTextureA() carga la textura incluyendo canal alfa (transparencia)
-	pisoTexture = Texture("Textures/piso.tga");
-	pisoTexture.LoadTextureA();
+	pisoTexture = Texture("Textures/Suelocyberpunk.jpg");
+	pisoTexture.LoadTexture();
 
 	// --- 5. CARGA DE MODELOS 3D ---
-	// Assimp lee el archivo .obj y genera los meshes con sus texturas
+	// Assimp lee el archivo .obj/.fbx y genera los meshes con sus texturas
+	lamp_model = Model();
 	lamp_model.LoadModel("Models/redstone_lamp.obj");
+
+	// Joker (Ladrones Fantasma)
+	Joker_M = Model();
+	Joker_M.LoadModel("Models/LadronesFantasma/Joker.glb");
+
+	// Escenario
+	CentralBuilding_M = Model();
+	CentralBuilding_M.LoadModel("Models/escenario/centralBuilding.glb");
+	SteampunkHouse_M = Model();
+	SteampunkHouse_M.LoadModel("Models/escenario/steampunk_house.glb");
+	SteampunkHouse2_M = Model();
+	SteampunkHouse2_M.LoadModel("Models/escenario/steampunk_house2.glb");
+	SteampunkPostOffice_M = Model();
+	SteampunkPostOffice_M.LoadModel("Models/escenario/steampunk_post_office.glb");
+	SteampunkProp_M = Model();
+	SteampunkProp_M.LoadModel("Models/escenario/steampunk_prop.glb");
+	BazaarSteampunk_M = Model();
+	BazaarSteampunk_M.LoadModel("Models/escenario/bazaar_steampunk.glb");
+	TimePortal_M = Model();
+	TimePortal_M.LoadModel("Models/escenario/time_portal_steampunk.glb");
+	Pilar_M = Model();
+	Pilar_M.LoadModel("Models/bustos/pilar.glb");
+	Cervantes_M = Model();
+	Cervantes_M.LoadModel("Models/bustos/cervantes_statue.glb");
+	Poe_M = Model();
+	Poe_M.LoadModel("Models/bustos/poe_statue.glb");
+	Shakespeare_M = Model();
+	Shakespeare_M.LoadModel("Models/bustos/william_shakespeare_statue.glb");
 
 	// --- 6. CONFIGURACIÓN DEL SKYBOX ---
 	// Un skybox es un cubo gigante con 6 texturas (una por cara)
 	// que envuelve toda la escena para simular un cielo.
 	// El orden importa: derecha, izquierda, abajo, arriba, atrás, frente.
 	std::vector<std::string> skyboxFaces;
-	skyboxFaces.push_back("Textures/Skybox/cupertin-lake_rt.tga");
-	skyboxFaces.push_back("Textures/Skybox/cupertin-lake_lf.tga");
-	skyboxFaces.push_back("Textures/Skybox/cupertin-lake_dn.tga");
-	skyboxFaces.push_back("Textures/Skybox/cupertin-lake_up.tga");
-	skyboxFaces.push_back("Textures/Skybox/cupertin-lake_bk.tga");
-	skyboxFaces.push_back("Textures/Skybox/cupertin-lake_ft.tga");
+	skyboxFaces.push_back("Textures/new_Skybox/miramar_rt.tga");
+	skyboxFaces.push_back("Textures/new_Skybox/miramar_lf.tga");
+	skyboxFaces.push_back("Textures/new_Skybox/miramar_dn.tga");
+	skyboxFaces.push_back("Textures/new_Skybox/miramar_up.tga");
+	skyboxFaces.push_back("Textures/new_Skybox/miramar_bk.tga");
+	skyboxFaces.push_back("Textures/new_Skybox/miramar_ft.tga");
 	skybox = Skybox(skyboxFaces);
 
 	// --- 7. MATERIALES ---
@@ -367,9 +413,275 @@ int main()
 		meshList[0]->RenderMesh(); // Dibujar el piso
 
 		// ------------------------------------------------------------------ AQUI DEFINIMOS EL MUNDO ------------------------------------------
+
 		// --- LÁMPARA (modelo 3D) ---
-		// Se coloca justo sobre el piso (x=0, y=-1, z=0) y se escala a 5%
-		dibuja_modelo(lamp_model, 0.0f, -1.0f, 0.0f, 0.05);
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(-20.0f, -1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.05f, 0.05f, 0.05f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glUniform3fv(uniformColor, 1, glm::value_ptr(color));
+		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
+		lamp_model.RenderModel();
+
+		// --- JOKER ---
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(20.0f, -1.0f, -5.0f));
+		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(0.05f, 0.05f, 0.05f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glUniform3fv(uniformColor, 1, glm::value_ptr(color));
+		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
+		glDisable(GL_CULL_FACE);
+		Joker_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// --- CENTRAL BUILDING ---
+		model = glm::mat4(1.0);
+		// Central Building — centrado, movido hacia atrás en Z
+		model = glm::translate(model, glm::vec3(0.0f, -1.0f, -30.0f));
+		model = glm::scale(model, glm::vec3(7.5f, 7.5f, 7.5f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glUniform3fv(uniformColor, 1, glm::value_ptr(color));
+		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
+		glDisable(GL_CULL_FACE);
+		CentralBuilding_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Steampunk House — periferia derecha delantera
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(220.0f, -1.0f, 70.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(25.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(19.5f, 19.5f, 19.5f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		SteampunkHouse_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Steampunk House — periferia derecha trasera
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(250.0f, -1.0f, -170.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(-35.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(19.5f, 19.5f, 19.5f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		SteampunkHouse_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Steampunk House 2 — periferia izquierda delantera
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(-230.0f, 7.0f, 50.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(-20.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(15.0f, 15.0f, 15.0f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		SteampunkHouse2_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Steampunk House 2 — periferia izquierda trasera
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(-260.0f, 7.0f, -160.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(40.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(15.0f, 15.0f, 15.0f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		SteampunkHouse2_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Steampunk House — periferia frente derecha
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(130.0f, -1.0f, 230.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(55.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(19.5f, 19.5f, 19.5f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		SteampunkHouse_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Steampunk House — periferia atrás centro
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(50.0f, -1.0f, -245.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(-15.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(19.5f, 19.5f, 19.5f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		SteampunkHouse_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Steampunk House 2 — periferia frente izquierda
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(-130.0f, 7.0f, 225.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(-50.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(15.0f, 15.0f, 15.0f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		SteampunkHouse2_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Steampunk House 2 — periferia atrás izquierda
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(-240.0f, 7.0f, -230.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(20.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(15.0f, 15.0f, 15.0f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		SteampunkHouse2_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Bazaar — más alejado del centro
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(80.0f, -1.0f, 40.0f));
+		model = glm::rotate(model, glm::radians(15.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.095f, 0.095f, 0.095f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		BazaarSteampunk_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Time Portal — lado izquierdo
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(-80.0f, -1.0f, 60.0f));
+		model = glm::rotate(model, glm::radians(-30.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(4.5f, -4.5f, 4.5f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		TimePortal_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Time Portal — lado derecho lejos
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(-200.0f, -1.0f, -160.0f));
+		model = glm::rotate(model, glm::radians(45.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(4.5f, -4.5f, 4.5f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		TimePortal_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// ---- Galería de bustos — fila en X, fondo del mapa Z=-200 ----
+		// Separación 8 unidades en X, base X=30
+
+		// Pilar 1  (X=30)
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(30.0f, -1.0f, -200.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(1.5f, 1.5f, 1.5f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		Pilar_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(30.0f, 10.0f, -193.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(1.2f, 1.2f, 1.2f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		Cervantes_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Pilar 2  (X=38)
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(38.0f, -1.0f, -200.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(1.5f, 1.5f, 1.5f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		Pilar_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(38.0f, 10.0f, -200.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(4.0f, 4.0f, 4.0f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		Poe_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Pilar 3  (X=46)
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(46.0f, -1.0f, -200.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(1.5f, 1.5f, 1.5f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		Pilar_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(46.0f, 7.0f, -200.0f));
+		model = glm::scale(model, glm::vec3(12.0f, 12.0f, 12.0f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		Shakespeare_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Pilar 4 — vacío  (X=54)
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(54.0f, -1.0f, -200.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(1.5f, 1.5f, 1.5f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		Pilar_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Pilar 5 — vacío  (X=62)
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(62.0f, -1.0f, -200.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(1.5f, 1.5f, 1.5f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		Pilar_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Pilar 6 — vacío  (X=70)
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(70.0f, -1.0f, -200.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(1.5f, 1.5f, 1.5f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		Pilar_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Steampunk Prop — cerca del centro
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(0.0f, -1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.015f, 0.015f, 0.015f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		SteampunkProp_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Steampunk Post Office — esquina derecha trasera
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(100.0f, -1.0f, -60.0f));
+		model = glm::scale(model, glm::vec3(7.5f, 7.5f, 7.5f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		SteampunkPostOffice_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// Steampunk Post Office espejo — misma posición, espejo en Z
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(100.0f, -1.0f, -60.0f));
+		model = glm::scale(model, glm::vec3(7.5f, 7.5f, -7.5f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		SteampunkPostOffice_M.RenderModel();
+		glEnable(GL_CULL_FACE);
 
 		// --- Desactivar shader y presentar frame ---
 		glUseProgram(0);          // Desenlazar el shader
