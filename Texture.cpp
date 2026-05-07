@@ -25,9 +25,9 @@ bool Texture::LoadTextureA()
 	unsigned char *texData = stbi_load(fileLocation, &width, &height, &bitDepth,STBI_rgb_alpha); //el tipo unsigned char es para un array de bytes de la imagen, obtener datos de la imagen 
 	if (!texData)
 	{
-		printf("No se encontró el archivo: %s", fileLocation);
+		printf("No se encontrï¿½ el archivo: %s", fileLocation);
 	}
-	glGenTextures(1, &textureID); //parecido al VAO: crear una textura y asignarle un índice
+	glGenTextures(1, &textureID); //parecido al VAO: crear una textura y asignarle un ï¿½ndice
 	glBindTexture(GL_TEXTURE_2D, textureID);//se indica que la textura es de tipo 2D, para superficies planas es suficiente esta textura
 	
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);// eje S paralelo a X, repetir sobre el eje
@@ -35,8 +35,8 @@ bool Texture::LoadTextureA()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);// eje S paralelo a X, envolver toda la superficie
 */
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);// eje T paralelo a Y, repetir sobre el eje
-	/*GL_TEXTURE_MIN_FILTER: Para más cerca o textura se escala a menor tamaño. GL_TEXTURE_MAG_FILTER: Para más lejos o textura se escala a mayor tamaño. 
-	GL_LINEAR  aplica sampling y blending de texels más cercanos. GL_NEAREST aplica sample de texel más cercano
+	/*GL_TEXTURE_MIN_FILTER: Para mï¿½s cerca o textura se escala a menor tamaï¿½o. GL_TEXTURE_MAG_FILTER: Para mï¿½s lejos o textura se escala a mayor tamaï¿½o. 
+	GL_LINEAR  aplica sampling y blending de texels mï¿½s cercanos. GL_NEAREST aplica sample de texel mï¿½s cercano
 	*/
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -44,7 +44,7 @@ bool Texture::LoadTextureA()
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texData);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, 0);//para hacer un unbind de la textura
-	stbi_image_free(texData); //para liberar la información de la imagen
+	stbi_image_free(texData); //para liberar la informaciï¿½n de la imagen
 	return true;
 }
 bool Texture::LoadTexture()
@@ -54,9 +54,9 @@ bool Texture::LoadTexture()
 	unsigned char *texData = stbi_load(fileLocation, &width, &height, &bitDepth, 0); //el tipo unsigned char es para un array de bytes de la imagen, obtener datos de la imagen 
 	if (!texData)
 	{
-		printf("No se encontró el archivo: %s", fileLocation);
+		printf("No se encontrï¿½ el archivo: %s", fileLocation);
 	}
-	glGenTextures(1, &textureID); //parecido al VAO: crear una textura y asignarle un índice
+	glGenTextures(1, &textureID); //parecido al VAO: crear una textura y asignarle un ï¿½ndice
 	glBindTexture(GL_TEXTURE_2D, textureID);//se indica que la textura es de tipo 2D, para superficies planas es suficiente esta textura
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);// eje S paralelo a X, repetir sobre el eje
@@ -64,8 +64,8 @@ bool Texture::LoadTexture()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);// eje S paralelo a X, envolver toda la superficie
 */
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);// eje T paralelo a Y, repetir sobre el eje
-	/*GL_TEXTURE_MIN_FILTER: Para más cerca o textura se escala a menor tamaño. GL_TEXTURE_MAG_FILTER: Para más lejos o textura se escala a mayor tamaño.
-	GL_LINEAR  aplica sampling y blending de texels más cercanos. GL_NEAREST aplica sample de texel más cercano
+	/*GL_TEXTURE_MIN_FILTER: Para mï¿½s cerca o textura se escala a menor tamaï¿½o. GL_TEXTURE_MAG_FILTER: Para mï¿½s lejos o textura se escala a mayor tamaï¿½o.
+	GL_LINEAR  aplica sampling y blending de texels mï¿½s cercanos. GL_NEAREST aplica sample de texel mï¿½s cercano
 	*/
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -74,9 +74,31 @@ bool Texture::LoadTexture()
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glGenerateMipmap(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, 0);//para hacer un unbind de la textura
-	stbi_image_free(texData); //para liberar la información de la imagen
+	stbi_image_free(texData); //para liberar la informaciï¿½n de la imagen
 	return true;
 }
+bool Texture::LoadTextureFromMemory(const unsigned char* data, unsigned int dataSize)
+{
+	stbi_set_flip_vertically_on_load(true);
+	unsigned char* texData = stbi_load_from_memory(data, (int)dataSize, &width, &height, &bitDepth, STBI_rgb_alpha);
+	if (!texData)
+	{
+		printf("No se pudo cargar textura embebida desde memoria\n");
+		return false;
+	}
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, texData);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	stbi_image_free(texData);
+	return true;
+}
+
 void Texture::ClearTexture()
 {
 
