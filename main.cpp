@@ -47,9 +47,13 @@
 Window mainWindow;
 std::vector<Mesh*> meshList;    // Lista de geometrías (meshes)
 std::vector<Shader> shaderList; // Lista de shaders compilados
-Camera camera;
-Camera aerialCamera;
-int cameraMode = 0; // 0 = 3ra persona (sigue al avatar), 1 = aérea
+Camera camera;       // modo 1 — 3ra persona (sigue al avatar)
+Camera aerialCamera; // modo 2 — aérea cenital
+Camera freeCamera;   // modo 3 — libre (primera persona)
+Camera poi1Camera;   // modo 4 — galería de bustos: frente
+Camera poi2Camera;   // modo 5 — galería de bustos: lateral
+Camera poi3Camera;   // modo 6 — galería de bustos: elevada
+int cameraMode = 0;  // 0-5 según tecla presionada
 
 // Avatar (Joker como personaje principal)
 glm::vec3 avatarPos(0.0f, -1.0f, 0.0f); // posición en el mundo (Y=-1 = nivel del suelo)
@@ -205,13 +209,38 @@ int main()
 		0.3f, 0.5f                     // velocidad, sensibilidad
 	);
 
-	// Cámara aérea: posición elevada, mirando hacia abajo (pitch=-70°)
-	// Tecla 2 activa este modo, tecla 1 regresa al modo normal
+	// Cámara aérea (tecla 2)
 	aerialCamera = Camera(
-		glm::vec3(0.0f, 700.0f, 0.0f), // posición elevada sobre el centro
-		glm::vec3(0.0f, 1.0f, 0.0f),   // vector up
-		-90.0f, -89.0f,                 // yaw, pitch (mirando recto hacia abajo)
-		1.0f, 0.3f                      // velocidad, sensibilidad
+		glm::vec3(0.0f, 700.0f, 0.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f),
+		-90.0f, -89.0f,
+		1.0f, 0.3f
+	);
+
+	// Cámara libre / primera persona (tecla 3)
+	freeCamera = Camera(
+		glm::vec3(0.0f, 2.5f, 0.0f),
+		glm::vec3(0.0f, 1.0f, 0.0f),
+		-60.0f, 0.0f,
+		1.0f, 0.5f
+	);
+
+	// Cámaras fijas — tercer recorrido: galería de bustos (teclas 4-6)
+	// Los bustos están en X≈30-46, Y≈7-10, Z≈-193 a -200
+	poi1Camera = Camera(glm::vec3(0,0,0), glm::vec3(0,1,0), 0, 0, 0, 0);
+	poi1Camera.setPositionAndLookAt(
+		glm::vec3(38.0f,  8.0f, -155.0f),  // frente a la galería
+		glm::vec3(38.0f,  8.0f, -200.0f)
+	);
+	poi2Camera = Camera(glm::vec3(0,0,0), glm::vec3(0,1,0), 0, 0, 0, 0);
+	poi2Camera.setPositionAndLookAt(
+		glm::vec3( 5.0f,  8.0f, -197.0f),  // lateral izquierdo
+		glm::vec3(46.0f,  8.0f, -200.0f)
+	);
+	poi3Camera = Camera(glm::vec3(0,0,0), glm::vec3(0,1,0), 0, 0, 0, 0);
+	poi3Camera.setPositionAndLookAt(
+		glm::vec3(20.0f, 30.0f, -155.0f),  // vista elevada 3/4
+		glm::vec3(40.0f,  5.0f, -200.0f)
 	);
 
 	// --- 4. CARGA DE TEXTURAS ---
@@ -372,18 +401,24 @@ int main()
 		glfwPollEvents();
 		bool* keys = mainWindow.getsKeys();
 
-		// Cambio de cámara: tecla 1 = normal (3a persona) | tecla 2 = aérea
-		static bool key1Prev = false, key2Prev = false;
-		if (keys[GLFW_KEY_1] && !key1Prev) cameraMode = 0;
-		if (keys[GLFW_KEY_2] && !key2Prev) cameraMode = 1;
-		key1Prev = keys[GLFW_KEY_1];
-		key2Prev = keys[GLFW_KEY_2];
+		// Cambio de cámara con teclas 1-6 (detección de flanco)
+		static bool keyPrev[6] = {};
+		int camKeys[6] = { GLFW_KEY_1, GLFW_KEY_2, GLFW_KEY_3,
+		                   GLFW_KEY_4, GLFW_KEY_5, GLFW_KEY_6 };
+		for (int i = 0; i < 6; i++) {
+			if (keys[camKeys[i]] && !keyPrev[i]) cameraMode = i;
+			keyPrev[i] = keys[camKeys[i]];
+		}
 
-		Camera* activeCamera = (cameraMode == 0) ? &camera : &aerialCamera;
+		// Seleccionar cámara activa
+		Camera* camPtrs[6] = { &camera, &aerialCamera, &freeCamera,
+		                       &poi1Camera, &poi2Camera, &poi3Camera };
+		Camera* activeCamera = camPtrs[cameraMode];
+
 		if (cameraMode == 0) {
-			// --- 3ra PERSONA: mover avatar con WASD, girar con mouse horizontal ---
+			// --- MODO 1: 3ra persona — avatar con WASD, giro con mouse ---
 			avatarYaw += mainWindow.getXChange() * AVATAR_TURN_SPEED;
-			mainWindow.getYChange(); // consumir vertical sin usarla
+			mainWindow.getYChange();
 
 			float yawRad = glm::radians(avatarYaw);
 			glm::vec3 avFwd(  cosf(yawRad), 0.0f,  sinf(yawRad));
@@ -394,12 +429,22 @@ int main()
 			if (keys[GLFW_KEY_A]) avatarPos -= avRight * spd;
 			if (keys[GLFW_KEY_D]) avatarPos += avRight * spd;
 
-			// Cámara detrás y encima del avatar, mirando a su torso
-			glm::vec3 camPos   = avatarPos - avFwd * 8.0f + glm::vec3(0.0f, 4.0f, 0.0f);
-			glm::vec3 lookAt   = avatarPos + glm::vec3(0.0f, 2.0f, 0.0f);
-			camera.setPositionAndLookAt(camPos, lookAt);
-		} else {
+			glm::vec3 camPos = avatarPos - avFwd * 8.0f + glm::vec3(0.0f, 4.0f, 0.0f);
+			camera.setPositionAndLookAt(camPos, avatarPos + glm::vec3(0.0f, 2.0f, 0.0f));
+
+		} else if (cameraMode == 1) {
+			// --- MODO 2: aérea — WASD en plano XZ, mouse bloqueado ---
 			aerialCamera.keyControlAerial(keys, 100 * deltaTime);
+			mainWindow.getXChange();
+			mainWindow.getYChange();
+
+		} else if (cameraMode == 2) {
+			// --- MODO 3: libre (primera persona) — WASD + mouse completo ---
+			freeCamera.keyControl(keys, 100 * deltaTime);
+			freeCamera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());
+
+		} else {
+			// --- MODOS 4-6: cámaras fijas del tercer recorrido ---
 			mainWindow.getXChange();
 			mainWindow.getYChange();
 		}
