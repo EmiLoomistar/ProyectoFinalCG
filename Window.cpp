@@ -39,7 +39,7 @@ int Window::Initialise()
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 	//CREAR VENTANA
-	mainWindow = glfwCreateWindow(width, height, "Emi Garo presents Practica 07: Iluminacion 1", NULL, NULL);
+	mainWindow = glfwCreateWindow(width, height, "Emi, Caro y Rafa. Proyecto Final", NULL, NULL);
 
 	if (!mainWindow)
 	{

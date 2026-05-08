@@ -48,6 +48,14 @@ Window mainWindow;
 std::vector<Mesh*> meshList;    // Lista de geometrías (meshes)
 std::vector<Shader> shaderList; // Lista de shaders compilados
 Camera camera;
+Camera aerialCamera;
+int cameraMode = 0; // 0 = 3ra persona (sigue al avatar), 1 = aérea
+
+// Avatar (Joker como personaje principal)
+glm::vec3 avatarPos(0.0f, -1.0f, 0.0f); // posición en el mundo (Y=-1 = nivel del suelo)
+float     avatarYaw = -90.0f;            // dirección que mira (°), -90 = hacia -Z
+static const float AVATAR_SPEED      = 30.0f; // unidades/segundo
+static const float AVATAR_TURN_SPEED = 0.3f;  // grados por unidad de mouse
 
 Texture pisoTexture;     // Textura que se aplica al plano del piso
 Model lamp_model;        // Modelo 3D de una lámpara
@@ -75,6 +83,9 @@ Material Material_opaco; // Material con bajo brillo especular
 GLfloat deltaTime = 0.0f;  // Tiempo entre frames
 GLfloat lastTime = 0.0f;   // Tiempo del frame anterior
 static double limitFPS = 1.0 / 60.0;  // Límite de 60 FPS
+
+// Ciclo día/noche: duración total en segundos (máximo 120 según lineamientos)
+static const float CYCLE_DURATION = 60.0f;
 
 // Fuentes de luz de la escena
 DirectionalLight mainLight;                  // Una sola luz direccional
@@ -194,6 +205,15 @@ int main()
 		0.3f, 0.5f                     // velocidad, sensibilidad
 	);
 
+	// Cámara aérea: posición elevada, mirando hacia abajo (pitch=-70°)
+	// Tecla 2 activa este modo, tecla 1 regresa al modo normal
+	aerialCamera = Camera(
+		glm::vec3(0.0f, 700.0f, 0.0f), // posición elevada sobre el centro
+		glm::vec3(0.0f, 1.0f, 0.0f),   // vector up
+		-90.0f, -89.0f,                 // yaw, pitch (mirando recto hacia abajo)
+		1.0f, 0.3f                      // velocidad, sensibilidad
+	);
+
 	// --- 4. CARGA DE TEXTURAS ---
 	// LoadTextureA() carga la textura incluyendo canal alfa (transparencia)
 	pisoTexture = Texture("Textures/Suelocyberpunk.jpg");
@@ -268,19 +288,35 @@ int main()
 		0.0f, -1.0f, 0.0f    // dirección: hacia -Z (hacia el fondo)
 	);
 
-	// LUZ PUNTUAL (como un foco o bombilla)
-	// Emite luz en todas direcciones desde un punto.
-	// La atenuación controla cómo disminuye la luz con la distancia:
-	//   Atenuación = 1 / (constante + lineal*d + exponencial*d²)
-	//   - constante (1.0): base, siempre presente
-	//   - lineal (0.09): caída suave
-	//   - exponencial (0.032): caída rápida a distancia
+	// LUMINARIAS PUNTUALES — se prenden de noche automáticamente
+	// Posicionadas cerca de la lámpara y puntos clave del escenario.
+	// Atenuación suave (0.014, 0.0007) para iluminar un radio amplio.
 	unsigned int pointLightCount = 0;
+
+	// Luminaria 1 — junto a la lámpara redstone (izquierda del centro)
 	pointLights[0] = PointLight(
-		1.0f, 1.0f, 1.0f,      // color blanco
-		0.5f, 1.0f,             // intensidad ambiental y difusa
-		0.0f, 1.0f, 0.0f,      // posición: arriba del centro
-		1.0f, 0.09f, 0.032f    // atenuación: constante, lineal, exponencial
+		1.0f, 0.85f, 0.5f,     // color ámbar/cálido (como farola)
+		0.3f, 1.5f,             // intensidad ambiental y difusa
+		-20.0f, 4.0f, 0.0f,    // posición: encima del lamp_model
+		1.0f, 0.014f, 0.0007f  // atenuación: rango amplio
+	);
+	pointLightCount++;
+
+	// Luminaria 2 — zona del Bazaar
+	pointLights[1] = PointLight(
+		1.0f, 0.85f, 0.5f,
+		0.3f, 1.5f,
+		80.0f, 4.0f, 40.0f,    // encima del bazaar
+		1.0f, 0.014f, 0.0007f
+	);
+	pointLightCount++;
+
+	// Luminaria 3 — entrada al Central Building
+	pointLights[2] = PointLight(
+		1.0f, 0.85f, 0.5f,
+		0.3f, 1.5f,
+		0.0f, 4.0f, -15.0f,    // frente al edificio central
+		1.0f, 0.014f, 0.0007f
 	);
 	pointLightCount++;
 
@@ -333,9 +369,89 @@ int main()
 		lastTime = now;
 
 		// --- Procesamiento de entrada ---
-		glfwPollEvents();  // Captura eventos de teclado/ratón
-		camera.keyControl(mainWindow.getsKeys(), 100*deltaTime);   // WASD
-		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange()); // Ratón
+		glfwPollEvents();
+		bool* keys = mainWindow.getsKeys();
+
+		// Cambio de cámara: tecla 1 = normal (3a persona) | tecla 2 = aérea
+		static bool key1Prev = false, key2Prev = false;
+		if (keys[GLFW_KEY_1] && !key1Prev) cameraMode = 0;
+		if (keys[GLFW_KEY_2] && !key2Prev) cameraMode = 1;
+		key1Prev = keys[GLFW_KEY_1];
+		key2Prev = keys[GLFW_KEY_2];
+
+		Camera* activeCamera = (cameraMode == 0) ? &camera : &aerialCamera;
+		if (cameraMode == 0) {
+			// --- 3ra PERSONA: mover avatar con WASD, girar con mouse horizontal ---
+			avatarYaw += mainWindow.getXChange() * AVATAR_TURN_SPEED;
+			mainWindow.getYChange(); // consumir vertical sin usarla
+
+			float yawRad = glm::radians(avatarYaw);
+			glm::vec3 avFwd(  cosf(yawRad), 0.0f,  sinf(yawRad));
+			glm::vec3 avRight(-sinf(yawRad), 0.0f,  cosf(yawRad));
+			float spd = AVATAR_SPEED * deltaTime;
+			if (keys[GLFW_KEY_W]) avatarPos += avFwd   * spd;
+			if (keys[GLFW_KEY_S]) avatarPos -= avFwd   * spd;
+			if (keys[GLFW_KEY_A]) avatarPos -= avRight * spd;
+			if (keys[GLFW_KEY_D]) avatarPos += avRight * spd;
+
+			// Cámara detrás y encima del avatar, mirando a su torso
+			glm::vec3 camPos   = avatarPos - avFwd * 8.0f + glm::vec3(0.0f, 4.0f, 0.0f);
+			glm::vec3 lookAt   = avatarPos + glm::vec3(0.0f, 2.0f, 0.0f);
+			camera.setPositionAndLookAt(camPos, lookAt);
+		} else {
+			aerialCamera.keyControlAerial(keys, 100 * deltaTime);
+			mainWindow.getXChange();
+			mainWindow.getYChange();
+		}
+
+		// Toggle del spotlight con tecla F
+		static bool fKeyPrev = false;
+		static bool spotlightOn = true;
+		if (keys[GLFW_KEY_F] && !fKeyPrev) spotlightOn = !spotlightOn;
+		fKeyPrev = keys[GLFW_KEY_F];
+
+		// ============================================================
+		// CICLO DÍA / NOCHE
+		// cycleTime: 0.0 = mediodía, 0.5 = medianoche
+		// ============================================================
+		float cycleTime = fmod((float)glfwGetTime(), CYCLE_DURATION) / CYCLE_DURATION;
+		float sunAngle  = cycleTime * 2.0f * 3.14159265f;
+
+		// dayFactor: 1 = pleno día, 0 = plena noche (suavizado con coseno)
+		float dayFactor = glm::max(0.0f, cosf(sunAngle));
+
+		// Dirección del sol: gira en el plano Y-Z
+		float sunDirX =  0.3f;
+		float sunDirY = -cosf(sunAngle); // -1 al mediodía, +1 a medianoche
+		float sunDirZ =  sinf(sunAngle);
+
+		// Color de la luz según la fase del día
+		glm::vec3 dayColor  (1.00f, 0.95f, 0.80f); // blanco cálido
+		glm::vec3 dawnColor (1.00f, 0.45f, 0.10f); // naranja amanecer/atardecer
+		glm::vec3 nightColor(0.02f, 0.02f, 0.10f); // azul oscuro noche
+
+		glm::vec3 sunColor;
+		if (dayFactor > 0.3f)
+			sunColor = glm::mix(dawnColor, dayColor,  (dayFactor - 0.3f) / 0.7f);
+		else if (dayFactor > 0.0f)
+			sunColor = glm::mix(nightColor, dawnColor, dayFactor / 0.3f);
+		else
+			sunColor = nightColor;
+
+		// Reconstruir la luz direccional con los valores del ciclo
+		mainLight = DirectionalLight(
+			sunColor.r, sunColor.g, sunColor.b,
+			0.05f + dayFactor * 0.35f, // ambientIntensity: baja de noche
+			dayFactor * 0.8f,          // diffuseIntensity: 0 de noche
+			sunDirX, sunDirY, sunDirZ
+		);
+
+		// Luminarias puntuales: las 3 se encienden de noche (dayFactor < 0.25)
+		pointLightCount = (dayFactor < 0.25f) ? 3 : 0;
+
+		// Tinte del skybox según fase del día
+		glm::vec3 skyTintColor = glm::max(sunColor, glm::vec3(0.04f, 0.04f, 0.12f));
+		skybox.SetTint(skyTintColor.r, skyTintColor.g, skyTintColor.b);
 
 		// --- Limpieza de buffers ---
 		// Se limpia el color (fondo negro) y el buffer de profundidad
@@ -345,8 +461,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// --- Dibujar skybox ---
-		// Se dibuja primero, antes de los objetos de la escena.
-		skybox.DrawSkybox(camera.calculateViewMatrix(), projection);
+		skybox.DrawSkybox(activeCamera->calculateViewMatrix(), projection);
 
 		// --- Activar shader de iluminación ---
 		shaderList[0].UseShader();
@@ -363,28 +478,26 @@ int main()
 		// --- Enviar matrices globales al shader ---
 		// Projection: cómo se proyecta la escena 3D en pantalla
 		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
-		// View: posición y orientación de la cámara
-		glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
-		// EyePosition: posición de la cámara (necesaria para cálculo especular)
-		// La reflexión especular depende del ángulo entre el ojo y la luz.
+		// View: posición y orientación de la cámara activa
+		glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(activeCamera->calculateViewMatrix()));
 		glUniform3f(uniformEyePosition,
-			camera.getCameraPosition().x,
-			camera.getCameraPosition().y,
-			camera.getCameraPosition().z);
+			activeCamera->getCameraPosition().x,
+			activeCamera->getCameraPosition().y,
+			activeCamera->getCameraPosition().z);
 
 		// --- Actualizar linterna (spotlight ligada a la cámara) ---
 		// La linterna sigue la posición y dirección de la cámara
 		// en tiempo real, simulando que el jugador la sostiene.
-		glm::vec3 lowerLight = camera.getCameraPosition();
-		lowerLight.y -= 0.3f;  // Ligeramente abajo para efecto realista
-		spotLights[0].SetFlash(lowerLight, camera.getCameraDirection());
+		glm::vec3 lowerLight = activeCamera->getCameraPosition();
+		lowerLight.y -= 0.3f;
+		spotLights[0].SetFlash(lowerLight, activeCamera->getCameraDirection());
 
 		// --- Enviar información de luces al shader ---
 		// El shader recibe todas las fuentes de luz para calcular
 		// la iluminación de cada fragmento (píxel).
 		shaderList[0].SetDirectionalLight(&mainLight);
 		shaderList[0].SetPointLights(pointLights, pointLightCount);
-		shaderList[0].SetSpotLights(spotLights, spotLightCount);
+		shaderList[0].SetSpotLights(spotLights, spotlightOn ? spotLightCount : 0);
 
 		// ========================================================
 		// DIBUJADO DE OBJETOS
@@ -423,12 +536,13 @@ int main()
 		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
 		lamp_model.RenderModel();
 
-		// --- JOKER ---
+		// --- JOKER (avatar del jugador) ---
 		model = glm::mat4(1.0);
-		model = glm::translate(model, glm::vec3(20.0f, -1.0f, -5.0f));
+		model = glm::translate(model, avatarPos);
+		model = glm::rotate(model, glm::radians(-(avatarYaw+90)), glm::vec3(0.0f, 1.0f, 0.0f));
 		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		model = glm::rotate(model, glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		model = glm::scale(model, glm::vec3(0.05f, 0.05f, 0.05f));
+		model = glm::scale(model, glm::vec3(0.01f, 0.01f, 0.01f));
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		glUniform3fv(uniformColor, 1, glm::value_ptr(color));
 		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);

@@ -15,6 +15,9 @@ public:
 
 	void keyControl(bool* keys, GLfloat deltaTime);
 	void mouseControl(GLfloat xChange, GLfloat yChange);
+	void keyControlAerial(bool* keys, GLfloat deltaTime);
+	void mouseControlAerial(GLfloat xChange, GLfloat yChange);
+	void setPositionAndLookAt(glm::vec3 pos, glm::vec3 target);
 
 	glm::vec3 getCameraPosition();
 	glm::vec3 getCameraDirection();

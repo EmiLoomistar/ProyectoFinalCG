@@ -31,6 +31,7 @@ public:
 	GLuint GetShininessLocation();
 	GLuint GetEyePositionLocation();
 	GLuint getColorLocation();
+	GLuint GetUniformLocation(const char* name);
 
 	void SetDirectionalLight(DirectionalLight * dLight);
 	void SetPointLights(PointLight * pLight, unsigned int lightCount);

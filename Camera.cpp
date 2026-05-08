@@ -90,6 +90,50 @@ void Camera::update()
 }
 
 
+void Camera::keyControlAerial(bool* keys, GLfloat deltaTime)
+{
+	GLfloat velocity = moveSpeed * deltaTime;
+
+	// Proyectar front y right sobre el plano XZ para movimiento horizontal puro
+	glm::vec3 horizontal(front.x, 0.0f, front.z);
+	if (glm::length(horizontal) > 0.001f)
+		horizontal = glm::normalize(horizontal);
+	else
+		horizontal = glm::vec3(1.0f, 0.0f, 0.0f);
+
+	glm::vec3 horizontalRight(right.x, 0.0f, right.z);
+	if (glm::length(horizontalRight) > 0.001f)
+		horizontalRight = glm::normalize(horizontalRight);
+
+	if (keys[GLFW_KEY_W]) position += horizontal * velocity;
+	if (keys[GLFW_KEY_S]) position -= horizontal * velocity;
+	if (keys[GLFW_KEY_A]) position -= horizontalRight * velocity;
+	if (keys[GLFW_KEY_D]) position += horizontalRight * velocity;
+}
+
+void Camera::mouseControlAerial(GLfloat xChange, GLfloat yChange)
+{
+	xChange *= turnSpeed;
+	yChange *= turnSpeed;
+
+	yaw += xChange;
+	pitch += yChange;
+
+	// La cámara aérea siempre mira hacia abajo: pitch entre -89° y -20°
+	if (pitch > -20.0f) pitch = -20.0f;
+	if (pitch < -89.0f) pitch = -89.0f;
+
+	update();
+}
+
+void Camera::setPositionAndLookAt(glm::vec3 pos, glm::vec3 target)
+{
+	position = pos;
+	front = glm::normalize(target - pos);
+	right = glm::normalize(glm::cross(front, worldUp));
+	up    = glm::normalize(glm::cross(right, front));
+}
+
 Camera::~Camera()
 {
 }
