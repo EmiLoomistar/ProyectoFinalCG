@@ -90,6 +90,8 @@ static double limitFPS = 1.0 / 60.0;  // Límite de 60 FPS
 
 // Ciclo día/noche: duración total en segundos (máximo 120 según lineamientos)
 static const float CYCLE_DURATION = 60.0f;
+float cycleElapsed = 0.0f;  // tiempo acumulado del ciclo (0 = mediodía)
+bool  cycleRunning = false; // inicia pausado; tecla 7 lo activa una vez
 
 // Fuentes de luz de la escena
 DirectionalLight mainLight;                  // Una sola luz direccional
@@ -456,10 +458,25 @@ int main()
 		fKeyPrev = keys[GLFW_KEY_F];
 
 		// ============================================================
-		// CICLO DÍA / NOCHE
-		// cycleTime: 0.0 = mediodía, 0.5 = medianoche
+		// CICLO DÍA / NOCHE  (tecla 7 = reproducir una vez desde mediodía)
+		// cycleTime: 0.0 = mediodía, 0.5 = medianoche, 1.0 = mediodía otra vez
 		// ============================================================
-		float cycleTime = fmod((float)glfwGetTime(), CYCLE_DURATION) / CYCLE_DURATION;
+		static bool key7Prev = false;
+		if (keys[GLFW_KEY_7] && !key7Prev) {
+			cycleElapsed = 0.0f;
+			cycleRunning = true;
+		}
+		key7Prev = keys[GLFW_KEY_7];
+
+		if (cycleRunning) {
+			cycleElapsed += deltaTime;
+			if (cycleElapsed >= CYCLE_DURATION) {
+				cycleElapsed = CYCLE_DURATION; // congela en mediodía al terminar
+				cycleRunning = false;
+			}
+		}
+
+		float cycleTime = cycleElapsed / CYCLE_DURATION;
 		float sunAngle  = cycleTime * 2.0f * 3.14159265f;
 
 		// dayFactor: 1 = pleno día, 0 = plena noche (suavizado con coseno)
