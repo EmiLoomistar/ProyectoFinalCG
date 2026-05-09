@@ -95,7 +95,10 @@ void Model::LoadMesh(aiMesh * mesh, const aiScene * scene)
 		}
 		//Normals importante, las normales son negativas porque la luz interact�a con ellas de esa forma, c�mo se vio con el dado/cubo
 		
-		vertices.insert(vertices.end(), { -mesh->mNormals[i].x,-mesh->mNormals[i].y ,-mesh->mNormals[i].z });
+		if (mesh->mNormals)
+			vertices.insert(vertices.end(), { -mesh->mNormals[i].x, -mesh->mNormals[i].y, -mesh->mNormals[i].z });
+		else
+			vertices.insert(vertices.end(), { 0.0f, 0.0f, -1.0f });
 	}
 	for (unsigned int i = 0; i < mesh->mNumFaces; i++)
 	{
@@ -120,10 +123,17 @@ void Model::LoadMaterials(const aiScene * scene)
 	{
 		aiMaterial* material = scene->mMaterials[i];
 		TextureList[i] = nullptr;
+		// Buscar textura: primero DIFFUSE (OBJ/FBX), luego BASE_COLOR (GLB/GLTF2 PBR)
+		aiTextureType texType = aiTextureType_NONE;
 		if (material->GetTextureCount(aiTextureType_DIFFUSE))
+			texType = aiTextureType_DIFFUSE;
+		else if (material->GetTextureCount(aiTextureType_BASE_COLOR))
+			texType = aiTextureType_BASE_COLOR;
+
+		if (texType != aiTextureType_NONE)
 		{
 			aiString path;
-			if (material->GetTexture(aiTextureType_DIFFUSE, 0, &path) == AI_SUCCESS)
+			if (material->GetTexture(texType, 0, &path) == AI_SUCCESS)
 			{
 				std::string pathStr = std::string(path.data);
 
@@ -141,7 +151,16 @@ void Model::LoadMaterials(const aiScene * scene)
 							// Textura comprimida (jpg/png en memoria)
 							loaded = newTex->LoadTextureFromMemory(
 								(unsigned char*)embeddedTex->pcData,
-								embeddedTex->mWidth // mWidth = tamaño en bytes cuando mHeight==0
+								embeddedTex->mWidth
+							);
+						}
+						else
+						{
+							// Píxeles crudos BGRA (mWidth x mHeight)
+							loaded = newTex->LoadTextureFromRawPixels(
+								(unsigned char*)embeddedTex->pcData,
+								embeddedTex->mWidth,
+								embeddedTex->mHeight
 							);
 						}
 						if (loaded)

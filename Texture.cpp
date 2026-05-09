@@ -99,6 +99,23 @@ bool Texture::LoadTextureFromMemory(const unsigned char* data, unsigned int data
 	return true;
 }
 
+bool Texture::LoadTextureFromRawPixels(const unsigned char* data, int w, int h)
+{
+	width = w;
+	height = h;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// aiTexel es BGRA — GL_BGRA le indica a OpenGL el orden correcto
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	return true;
+}
+
 void Texture::ClearTexture()
 {
 

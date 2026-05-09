@@ -17,6 +17,11 @@ Window::Window(GLint windowWidth, GLint windowHeight)
 	pos_z = 0.0f;
 	pos_x = 0.0f;
 	articulation = 0.0f;
+	xChange = 0.0f;
+	yChange = 0.0f;
+	lastX = 0.0f;
+	lastY = 0.0f;
+	mouseFirstMoved = true;
 	for (size_t i = 0; i < 1024; i++)
 	{
 		keys[i] = 0;
@@ -39,6 +44,8 @@ int Window::Initialise()
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 	//CREAR VENTANA
+	width  = 1920;
+	height = 1080;
 	mainWindow = glfwCreateWindow(width, height, "Emi, Caro y Rafa. Proyecto Final", NULL, NULL);
 
 	if (!mainWindow)

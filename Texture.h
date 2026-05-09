@@ -8,6 +8,7 @@ public:
 	bool LoadTexture();
 	bool LoadTextureA();
 	bool LoadTextureFromMemory(const unsigned char* data, unsigned int dataSize);
+	bool LoadTextureFromRawPixels(const unsigned char* data, int w, int h);
 	void UseTexture();
 	void ClearTexture();
 	~Texture();
