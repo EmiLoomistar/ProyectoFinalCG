@@ -58,6 +58,7 @@ uniform sampler2D theTexture;
 uniform Material material;
 
 uniform vec3 eyePosition;
+uniform int noLighting;  // 1 = ignorar iluminación (billboards, tiles planos)
 
 vec4 CalcLightByDirection(Light light, vec3 direction)
 {
@@ -157,10 +158,14 @@ vec4 CalcSpotLights()
 
 void main()
 {
-	vec4 finalcolor = CalcDirectionalLight();
-	finalcolor += CalcPointLights();
-	finalcolor += CalcSpotLights();
-	//color = texture(theTexture, TexCoord)*vColor;
-	color = texture(theTexture, TexCoord)*vColor*finalcolor;
-	
+	vec4 texColor = texture(theTexture, TexCoord);
+	if (noLighting == 1) {
+		// Sin iluminación: textura directa con alpha del vColor
+		color = vec4(texColor.rgb, texColor.a * vColor.a);
+	} else {
+		vec4 finalcolor = CalcDirectionalLight();
+		finalcolor += CalcPointLights();
+		finalcolor += CalcSpotLights();
+		color = texColor * vColor * finalcolor;
+	}
 }
