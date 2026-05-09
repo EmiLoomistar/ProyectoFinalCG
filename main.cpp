@@ -53,9 +53,9 @@ Camera freeCamera;   // modo 3 — libre (primera persona)
 Camera poi1Camera;   // modo 4 — galería de bustos: frente
 Camera poi2Camera;   // modo 5 — galería de bustos: lateral
 Camera poi3Camera;   // modo 6 — galería de bustos: elevada
-int cameraMode = 0;  // 0-5 según tecla presionada
+int cameraMode = 0;  // 0-5 según tecla presionada.
 
-// Avatar (Joker como personaje principal)
+// Avatar (Joker como personaje principal.
 glm::vec3 avatarPos(0.0f, -1.0f, 0.0f); // posición en el mundo (Y=-1 = nivel del suelo)
 float     avatarYaw = -90.0f;            // dirección que mira (°), -90 = hacia -Z
 static const float AVATAR_SPEED      = 30.0f; // unidades/segundo
@@ -64,8 +64,9 @@ static const float AVATAR_TURN_SPEED = 0.3f;  // grados por unidad de mouse
 Texture pisoTexture;     // Textura que se aplica al plano del piso
 Model lamp_model;        // Modelo 3D de una lámpara
 
-// Modelo Joker (Ladrones Fantasma).
+// Ladrones Fantasma
 Model Joker_M;
+Model Ladrones_M;
 
 // Escenario
 Model CentralBuilding_M;
@@ -75,6 +76,7 @@ Model SteampunkPostOffice_M;
 Model SteampunkProp_M;
 Model BazaarSteampunk_M;
 Model TimePortal_M;
+Model Subway_M;
 Model Pilar_M;
 Model Cervantes_M;
 Model Poe_M;
@@ -82,6 +84,34 @@ Model Shakespeare_M;
 
 Skybox skybox;           // Skybox (fondo envolvente)
 Material Material_opaco; // Material con bajo brillo especular
+
+// ---- Tren ----
+Model Train_M;
+Model TrainWheels_M;
+Model TrainBars_M;
+Texture trackTexture;   // tile de vías
+Texture humoTexture;    // partícula de humo
+
+// Circuito del tren: rectángulo a ±280 unidades del centro
+// El tren recorre 4 segmentos: +Z, -X, -Z, +X
+static const float TRACK_R  = 280.0f;  // radio del circuito
+static const float TRAIN_SPEED = 25.0f; // unidades/segundo
+static const float PERIMETER  = 8.0f * TRACK_R; // 4 lados * 2*280
+
+float trainT = 0.0f;  // distancia recorrida acumulada (wraps en PERIMETER)
+float wheelAngle = 0.0f;  // ángulo de giro ruedas
+float barsAngle  = 0.0f;  // ángulo manivelas
+
+// Partículas de humo
+struct SmokeParticle {
+    glm::vec3 pos;
+    float life;    // 0=vivo, 1=muerto
+    float size;
+    float alpha;
+};
+static const int MAX_SMOKE = 20;
+SmokeParticle smoke[MAX_SMOKE];
+float smokeTimer = 0.0f;
 
 // Variables de control de tiempo para movimiento uniforme
 GLfloat deltaTime = 0.0f;  // Tiempo entre frames
@@ -138,6 +168,18 @@ void CreateObjects()
 	Mesh* piso = new Mesh();
 	piso->CreateMesh(floorVertices, floorIndices, 32, 6);
 	meshList.push_back(piso);
+
+	// Quad cuadrado unitario para tiles de tracks (índice 1)
+	// -0.5 a 0.5 en X y Z, se escala uniformemente al render
+	GLfloat tileVertices[] = {
+		-0.5f, 0.0f, -0.5f,  0.0f, 0.0f,  0.0f, 1.0f, 0.0f,
+		 0.5f, 0.0f, -0.5f,  1.0f, 0.0f,  0.0f, 1.0f, 0.0f,
+		-0.5f, 0.0f,  0.5f,  0.0f, 1.0f,  0.0f, 1.0f, 0.0f,
+		 0.5f, 0.0f,  0.5f,  1.0f, 1.0f,  0.0f, 1.0f, 0.0f
+	};
+	Mesh* trackTile = new Mesh();
+	trackTile->CreateMesh(tileVertices, floorIndices, 32, 6);
+	meshList.push_back(trackTile); // índice 1
 }
 
 // ============================================================
@@ -255,9 +297,9 @@ int main()
 	lamp_model = Model();
 	lamp_model.LoadModel("Models/redstone_lamp.obj");
 
-	// Joker (Ladrones Fantasma)
-	Joker_M = Model();
-	Joker_M.LoadModel("Models/LadronesFantasma/Joker.glb");
+	// Ladrones Fantasma
+	Joker_M    = Model(); Joker_M.LoadModel("Models/LadronesFantasma/Joker.glb");
+	Ladrones_M = Model(); Ladrones_M.LoadModel("Models/LadronesFantasma/Ladrones.glb");
 
 	// Escenario
 	CentralBuilding_M = Model();
@@ -282,6 +324,17 @@ int main()
 	Poe_M.LoadModel("Models/bustos/poe_statue.glb");
 	Shakespeare_M = Model();
 	Shakespeare_M.LoadModel("Models/bustos/william_shakespeare_statue.glb");
+
+	// Tren
+	Subway_M = Model(); Subway_M.LoadModel("Models/LadronesFantasma/subway.glb");
+	Train_M      = Model(); Train_M.LoadModel("Models/Escenario/Train/train.glb");
+	TrainWheels_M = Model(); TrainWheels_M.LoadModel("Models/Escenario/Train/wheels.glb");
+	TrainBars_M   = Model(); TrainBars_M.LoadModel("Models/Escenario/Train/bars.glb");
+	trackTexture  = Texture("Textures/train_tracks.png"); trackTexture.LoadTextureA();
+	humoTexture   = Texture("Textures/Humo.png");         humoTexture.LoadTextureA();
+
+	// Inicializar partículas de humo (todas muertas al inicio)
+	for (int i = 0; i < MAX_SMOKE; i++) { smoke[i].life = 1.0f; }
 
 	// --- 6. CONFIGURACIÓN DEL SKYBOX ---
 	// Un skybox es un cubo gigante con 6 texturas (una por cara)
@@ -371,7 +424,7 @@ int main()
 	// Primero obtenemos su ubicación (ID) para luego asignarles valor.
 	GLuint uniformProjection = 0, uniformModel = 0, uniformView = 0,
 		uniformEyePosition = 0, uniformSpecularIntensity = 0,
-		uniformShininess = 0, uniformColor = 0;
+		uniformShininess = 0, uniformColor = 0, uniformAlpha = 0, uniformNoLighting = 0;
 
 	// --- 10. MATRIZ DE PROYECCIÓN ---
 	// Transforma coordenadas 3D a coordenadas de pantalla 2D.
@@ -534,6 +587,10 @@ int main()
 		uniformView = shaderList[0].GetViewLocation();
 		uniformEyePosition = shaderList[0].GetEyePositionLocation();
 		uniformColor = shaderList[0].getColorLocation();
+		uniformAlpha = shaderList[0].getAlphaLocation();
+		uniformNoLighting = shaderList[0].getNoLightingLocation();
+		glUniform1f(uniformAlpha, 1.0f);    // alpha por defecto = opaco
+		glUniform1i(uniformNoLighting, 0);  // iluminación activa por defecto
 		uniformSpecularIntensity = shaderList[0].GetSpecularIntensityLocation();
 		uniformShininess = shaderList[0].GetShininessLocation();
 
@@ -610,6 +667,18 @@ int main()
 		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
 		glDisable(GL_CULL_FACE);
 		Joker_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// --- LADRONES FANTASMA — afuera del subway ---
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(230.0f, -1.0f, -10.0f));
+		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.09f, 0.09f, 0.09f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glUniform3fv(uniformColor, 1, glm::value_ptr(color));
+		Material_opaco.UseMaterial(uniformSpecularIntensity, uniformShininess);
+		glDisable(GL_CULL_FACE);
+		Ladrones_M.RenderModel();
 		glEnable(GL_CULL_FACE);
 
 		// --- CENTRAL BUILDING ---
@@ -858,6 +927,310 @@ int main()
 		glDisable(GL_CULL_FACE);
 		SteampunkPostOffice_M.RenderModel();
 		glEnable(GL_CULL_FACE);
+
+		// Subway — cerca de la casa derecha delantera (220, -1, 70)
+		model = glm::mat4(1.0);
+		model = glm::translate(model, glm::vec3(210.0f, -3.5f, 90.0f));
+		model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		model = glm::rotate(model, glm::radians(30.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(5.0f, 5.0f, 5.0f));
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glDisable(GL_CULL_FACE);
+		Subway_M.RenderModel();
+		glEnable(GL_CULL_FACE);
+
+		// ================================================================
+		// TREN — animación y render
+		// ================================================================
+		{
+			const float tileSize   = 20.0f;                 // debe coincidir con tracks
+			const float cornerSize = 80.0f;                 // zona de curva (4 * tileSize)
+			const float sideLen    = 2.0f * TRACK_R;
+			const float straightEnd = TRACK_R - cornerSize;
+
+			trainT += TRAIN_SPEED * deltaTime;
+			if (trainT >= PERIMETER) trainT -= PERIMETER;
+			barsAngle += TRAIN_SPEED * deltaTime * 3.0f;
+
+			// ── Calcular posición y dirección continua sobre el circuito ──
+			// El circuito tiene 4 segmentos rectos + 4 curvas de esquina.
+			// Para el yaw continuo, muestreamos la posición un instante
+			// adelante y calculamos atan2 de la diferencia.
+			auto getCircuitPos = [&](float dist) -> glm::vec3 {
+				float d = fmodf(dist, PERIMETER);
+				if (d < 0) d += PERIMETER;
+
+				// Longitud de cada segmento recto (entre esquinas)
+				float straightLen = 2.0f * straightEnd;
+				// Longitud de cada cuarto de arco
+				float curveLen = (3.14159265f * 0.5f) * cornerSize;
+
+				// El circuito recorre en este orden:
+				//  Seg0 recto: X=+R, Z de -straightEnd → +straightEnd  (+Z)
+				//  Curva NE: centro (+straightEnd, +straightEnd), arco 0°→90° (gira a -X)
+				//  Seg1 recto: Z=+R, X de +straightEnd → -straightEnd  (-X)
+				//  Curva NW: centro (-straightEnd, +straightEnd), arco 90°→180°
+				//  Seg2 recto: X=-R, Z de +straightEnd → -straightEnd  (-Z)
+				//  Curva SW: centro (-straightEnd, -straightEnd), arco 180°→270°
+				//  Seg3 recto: Z=-R, X de -straightEnd → +straightEnd  (+X)
+				//  Curva SE: centro (+straightEnd, -straightEnd), arco 270°→360°
+
+				// Seg 0 recto (+Z)
+				if (d < straightLen) {
+					float frac = d / straightLen;
+					return glm::vec3(TRACK_R, -1.0f, -straightEnd + frac * straightLen);
+				}
+				d -= straightLen;
+				// Curva NE: centro (straightEnd, straightEnd), entra por X=+R Z=+straightEnd, sale por Z=+R X=+straightEnd
+				if (d < curveLen) {
+					float a = glm::radians(d / curveLen * 90.0f); // 0→90°
+					return glm::vec3(straightEnd + cornerSize * cosf(a), -1.0f, straightEnd + cornerSize * sinf(a));
+				}
+				d -= curveLen;
+				// Seg 1 recto (-X)
+				if (d < straightLen) {
+					float frac = d / straightLen;
+					return glm::vec3(straightEnd - frac * straightLen, -1.0f, TRACK_R);
+				}
+				d -= straightLen;
+				// Curva NW: centro (-straightEnd, straightEnd)
+				if (d < curveLen) {
+					float a = glm::radians(90.0f + d / curveLen * 90.0f); // 90→180°
+					return glm::vec3(-straightEnd + cornerSize * cosf(a), -1.0f, straightEnd + cornerSize * sinf(a));
+				}
+				d -= curveLen;
+				// Seg 2 recto (-Z)
+				if (d < straightLen) {
+					float frac = d / straightLen;
+					return glm::vec3(-TRACK_R, -1.0f, straightEnd - frac * straightLen);
+				}
+				d -= straightLen;
+				// Curva SW: centro (-straightEnd, -straightEnd)
+				if (d < curveLen) {
+					float a = glm::radians(180.0f + d / curveLen * 90.0f); // 180→270°
+					return glm::vec3(-straightEnd + cornerSize * cosf(a), -1.0f, -straightEnd + cornerSize * sinf(a));
+				}
+				d -= curveLen;
+				// Seg 3 recto (+X)
+				if (d < straightLen) {
+					float frac = d / straightLen;
+					return glm::vec3(-straightEnd + frac * straightLen, -1.0f, -TRACK_R);
+				}
+				d -= straightLen;
+				// Curva SE: centro (straightEnd, -straightEnd)
+				if (d < curveLen) {
+					float a = glm::radians(270.0f + d / curveLen * 90.0f); // 270→360°
+					return glm::vec3(straightEnd + cornerSize * cosf(a), -1.0f, -straightEnd + cornerSize * sinf(a));
+				}
+				return glm::vec3(TRACK_R, -1.0f, -straightEnd);
+			};
+
+			glm::vec3 trainPos  = getCircuitPos(trainT);
+			glm::vec3 trainPos2 = getCircuitPos(trainT + 0.5f); // muestra adelante para dirección
+			glm::vec3 trainDir  = glm::normalize(trainPos2 - trainPos);
+
+			// Yaw continuo: atan2 del vector dirección en plano XZ
+			float modelYaw = glm::degrees(atan2f(trainDir.x, trainDir.z)) + 270.0f;
+
+			// Frente del tren en coordenadas mundo (para humo)
+			glm::vec3 trainFront = trainPos + trainDir * 15.0f;
+
+			// --- Cuerpo del tren ---
+			model = glm::mat4(1.0f);
+			model = glm::translate(model, trainPos);
+			model = glm::rotate(model, glm::radians(modelYaw), glm::vec3(0.0f, 1.0f, 0.0f));
+			model = glm::scale(model, glm::vec3(20.0f, 20.0f, 20.0f));
+			glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+			glDisable(GL_CULL_FACE);
+			Train_M.RenderModel();
+			glEnable(GL_CULL_FACE);
+
+			// --- Ruedas (adelantadas en dirección de marcha, sin inclinación) ---
+			glm::vec3 wheelsPos = trainPos + trainDir * 18.0f + glm::vec3(0.0f, 3.0f, 0.0f);
+			model = glm::mat4(1.0f);
+			model = glm::translate(model, wheelsPos);
+			model = glm::rotate(model, glm::radians(modelYaw), glm::vec3(0.0f, 1.0f, 0.0f));
+			model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+			model = glm::rotate(model, glm::radians(-10.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+			model = glm::scale(model, glm::vec3(20.0f, 20.0f, 20.0f));
+			glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+			glDisable(GL_CULL_FACE);
+			TrainWheels_M.RenderModel();
+			glEnable(GL_CULL_FACE);
+
+			// --- Barras: óvalo aplastado en el eje local del tren ---
+			// El offset se aplica en espacio local (perpendicular a la dirección)
+			float barsRad = glm::radians(barsAngle);
+			glm::vec3 localRight = glm::normalize(glm::cross(trainDir, glm::vec3(0,1,0)));
+			float barsOffsetSide = cosf(barsRad) * 1.2f;
+			float barsOffsetUp   = sinf(barsRad) * 0.3f;
+			glm::vec3 barsPos = trainPos
+				+ localRight * barsOffsetSide
+				+ glm::vec3(0.0f, 8.0f + barsOffsetUp, 0.0f); // +8 para subirlas
+			model = glm::mat4(1.0f);
+			model = glm::translate(model, barsPos);
+			model = glm::rotate(model, glm::radians(modelYaw), glm::vec3(0.0f, 1.0f, 0.0f));
+			model = glm::scale(model, glm::vec3(20.0f, 20.0f, 20.0f));
+			glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+			glDisable(GL_CULL_FACE);
+			TrainBars_M.RenderModel();
+			glEnable(GL_CULL_FACE);
+
+			// ================================================================
+			// HUMO — partículas billboard con alpha real
+			// ================================================================
+			smokeTimer += deltaTime;
+			if (smokeTimer >= 0.6f) {
+				smokeTimer = 0.0f;
+				for (int i = 0; i < MAX_SMOKE; i++) {
+					if (smoke[i].life >= 1.0f) {
+						// Spawn en el frente del tren, elevado
+						smoke[i].pos   = trainFront + glm::vec3(0.0f, 25.0f, 0.0f);
+						smoke[i].life  = 0.0f;
+						smoke[i].size  = 2.5f;
+						smoke[i].alpha = 1.0f;
+						break;
+					}
+				}
+			}
+
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glDepthMask(GL_FALSE);
+			glUniform1i(uniformNoLighting, 1); // humo sin iluminación
+			humoTexture.UseTexture();
+
+			glm::mat4 viewMat = activeCamera->calculateViewMatrix();
+			glm::vec3 camRight(viewMat[0][0], viewMat[1][0], viewMat[2][0]);
+			glm::vec3 camUp   (viewMat[0][1], viewMat[1][1], viewMat[2][1]);
+
+			for (int i = 0; i < MAX_SMOKE; i++) {
+				if (smoke[i].life >= 1.0f) continue;
+				smoke[i].life  += deltaTime * 0.3f;
+				smoke[i].pos.y += deltaTime * 18.0f;
+				smoke[i].size   = 2.5f + smoke[i].life * 10.0f;
+				smoke[i].alpha  = 1.0f - smoke[i].life;
+
+				float s = smoke[i].size;
+				glm::vec3 p = smoke[i].pos;
+				glm::vec3 v0 = p - camRight*s - camUp*s;
+				glm::vec3 v1 = p + camRight*s - camUp*s;
+				glm::vec3 v2 = p + camRight*s + camUp*s;
+				glm::vec3 v3 = p - camRight*s + camUp*s;
+
+				GLfloat smokeVerts[] = {
+					v0.x,v0.y,v0.z, 0.0f,0.0f, 0.0f,1.0f,0.0f,
+					v1.x,v1.y,v1.z, 1.0f,0.0f, 0.0f,1.0f,0.0f,
+					v2.x,v2.y,v2.z, 1.0f,1.0f, 0.0f,1.0f,0.0f,
+					v3.x,v3.y,v3.z, 0.0f,1.0f, 0.0f,1.0f,0.0f
+				};
+				unsigned int smokeIdx[] = {0,1,2, 0,2,3};
+				Mesh* smokeQuad = new Mesh();
+				smokeQuad->CreateMesh(smokeVerts, smokeIdx, 32, 6);
+
+				glUniform1f(uniformAlpha, smoke[i].alpha);  // alpha real via uniform
+				glUniform3fv(uniformColor, 1, glm::value_ptr(color));
+				model = glm::mat4(1.0f);
+				glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+				smokeQuad->RenderMesh();
+				delete smokeQuad;
+			}
+			glUniform1f(uniformAlpha, 1.0f);
+			glUniform1i(uniformNoLighting, 0); // restaurar iluminación
+			glDepthMask(GL_TRUE);
+			glDisable(GL_BLEND);
+		}
+
+		// ================================================================
+		// TRAIN TRACKS — tiles rodeando el perímetro con curvas suaves
+		// ================================================================
+		{
+			glUniform1i(uniformNoLighting, 1);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glDepthMask(GL_FALSE);
+			trackTexture.UseTexture();
+			glUniform3fv(uniformColor, 1, glm::value_ptr(color));
+			const float tileSize    = 30.0f;   // más anchas
+			const float r           = TRACK_R;
+			const float cornerSize  = 90.0f;   // radio del arco de esquina
+			const float straightEnd = r - cornerSize;
+
+			// drawTile: posición central del tile + yaw tangente al recorrido
+			auto drawTile = [&](float tx, float tz, float yawDeg) {
+				model = glm::mat4(1.0f);
+				model = glm::translate(model, glm::vec3(tx, -0.99f, tz));
+				model = glm::rotate(model, glm::radians(yawDeg), glm::vec3(0.0f,1.0f,0.0f));
+				model = glm::scale(model, glm::vec3(tileSize, 1.0f, tileSize));
+				glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+				meshList[1]->RenderMesh();
+			};
+
+			float halfTile = tileSize * 0.5f;
+			// Lados rectos
+			for (float z = -straightEnd; z < straightEnd; z += tileSize)
+				drawTile( r, z + halfTile, 90.0f);
+			for (float z = -straightEnd; z < straightEnd; z += tileSize)
+				drawTile(-r, z + halfTile, 90.0f);
+			for (float x = -straightEnd; x < straightEnd; x += tileSize)
+				drawTile(x + halfTile,  r, 0.0f);
+			for (float x = -straightEnd; x < straightEnd; x += tileSize)
+				drawTile(x + halfTile, -r, 0.0f);
+
+			// Curvas — posición sobre el arco con yaw tangente correcto
+			// Para un arco con ángulo paramétrico 'a' (radianes):
+			//   pos = centro + cornerSize * (cos(a), sin(a))
+			//   tangente = perpendicular al radio = yaw derivado de la dirección de avance
+			const int CURVE_STEPS = 12;
+			const float eps = 0.01f; // offset pequeño para calcular tangente
+
+			// Helper: tangente del arco en el punto 'a' = atan2 de la diferencia entre dos puntos cercanos
+			// Para cada esquina se define su centro y se samplea a±eps para obtener la dirección real
+
+			// Esquina NE: centro (straightEnd, straightEnd), arco 0→90°
+			for (int s = 0; s < CURVE_STEPS; s++) {
+				float a   = glm::radians((s + 0.5f) / CURVE_STEPS * 90.0f);
+				float cx  =  straightEnd + cornerSize * cosf(a);
+				float cz  =  straightEnd + cornerSize * sinf(a);
+				float cx2 =  straightEnd + cornerSize * cosf(a + eps);
+				float cz2 =  straightEnd + cornerSize * sinf(a + eps);
+				float yaw = glm::degrees(atan2f(cx2 - cx, cz2 - cz)) + 90.0f;
+				drawTile(cx, cz, yaw);
+			}
+			// Esquina NW: centro (-straightEnd, straightEnd), arco 90→180°
+			for (int s = 0; s < CURVE_STEPS; s++) {
+				float a   = glm::radians(90.0f + (s + 0.5f) / CURVE_STEPS * 90.0f);
+				float cx  = -straightEnd + cornerSize * cosf(a);
+				float cz  =  straightEnd + cornerSize * sinf(a);
+				float cx2 = -straightEnd + cornerSize * cosf(a + eps);
+				float cz2 =  straightEnd + cornerSize * sinf(a + eps);
+				float yaw = glm::degrees(atan2f(cx2 - cx, cz2 - cz)) + 90.0f;
+				drawTile(cx, cz, yaw);
+			}
+			// Esquina SW: centro (-straightEnd, -straightEnd), arco 180→270°
+			for (int s = 0; s < CURVE_STEPS; s++) {
+				float a   = glm::radians(180.0f + (s + 0.5f) / CURVE_STEPS * 90.0f);
+				float cx  = -straightEnd + cornerSize * cosf(a);
+				float cz  = -straightEnd + cornerSize * sinf(a);
+				float cx2 = -straightEnd + cornerSize * cosf(a + eps);
+				float cz2 = -straightEnd + cornerSize * sinf(a + eps);
+				float yaw = glm::degrees(atan2f(cx2 - cx, cz2 - cz)) + 90.0f;
+				drawTile(cx, cz, yaw);
+			}
+			// Esquina SE: centro (straightEnd, -straightEnd), arco 270→360°
+			for (int s = 0; s < CURVE_STEPS; s++) {
+				float a   = glm::radians(270.0f + (s + 0.5f) / CURVE_STEPS * 90.0f);
+				float cx  =  straightEnd + cornerSize * cosf(a);
+				float cz  = -straightEnd + cornerSize * sinf(a);
+				float cx2 =  straightEnd + cornerSize * cosf(a + eps);
+				float cz2 = -straightEnd + cornerSize * sinf(a + eps);
+				float yaw = glm::degrees(atan2f(cx2 - cx, cz2 - cz)) + 90.0f;
+				drawTile(cx, cz, yaw);
+			}
+			glDepthMask(GL_TRUE);
+			glDisable(GL_BLEND);
+			glUniform1i(uniformNoLighting, 0);
+		}
 
 		// --- Desactivar shader y presentar frame ---
 		glUseProgram(0);          // Desenlazar el shader
