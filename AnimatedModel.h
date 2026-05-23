@@ -11,7 +11,7 @@
 #include <assimp\postprocess.h>
 #include "Texture.h"
 
-#define MAX_BONES         70
+#define MAX_BONES         66
 #define MAX_BONE_INFLUENCE 4
 
 struct VertexBoneData {
@@ -56,7 +56,7 @@ public:
     ~AnimatedModel();
 
     void LoadModel(const std::string& fileName);
-    void Update(float timeSec, const std::string& animName = "walk");
+    void Update(float timeSec, const std::string& animName = "walk", bool inPlace = false);
     void Render(GLuint bonesUniformLoc);
 
     int         FindAnimation(const std::string& name) const;
@@ -84,7 +84,7 @@ private:
     void LoadAnimations(const aiScene* sc);
 
     void TraverseNode(float tickTime, const AnimClip& clip,
-                      aiNode* node, const glm::mat4& parent);
+                      aiNode* node, const glm::mat4& parent, bool inPlace);
 
     glm::vec3 LerpPos(float t, const BoneChannel& ch);
     glm::quat NlerpRot(float t, const BoneChannel& ch);

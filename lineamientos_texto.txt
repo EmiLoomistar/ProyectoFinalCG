@@ -1,0 +1,328 @@
+--- Pagina 1 ---
+ UNIVERSIDAD NACIONAL AUTÓNOMA DE MÉXICO
+FACULTAD DE INGENIERÍA
+DIVISIÓN DE INGENIERÍA ELÉCTRICA
+COMPUTACIÓN GRÁFICA E INTERACCIÓN
+HUMANO-COMPUTADORA 
+           LINEAMIENTOS DEL PROYECTO FINAL DE TEORÍA
+GRUPO 6
+SEMESTRE 2026-2
+Descripción: El proyecto será entregado en equipos de tres o cuatro personas como máximo el día 
+Martes 26 de Mayo en la plataforma de Google Classroom, consta de un ambiente virtual 
+interactivo el cual será de diseño libre representando una zona abierta (exterior) (museo, galería, 
+mercado, plaza, alameda, etc)  que incluya elementos de la temática: “Literario” y “Tecnología a 
+Vapor”.
+El estilo visual del escenario estará basado en universos de personajes ficticios elegidos por cada 
+uno de los integrantes del equipo ( los personajes elegidos por cada integrante del equipo deben 
+de ser de universos diferentes), la única restricción es que no pueden elegir personajes que su 
+universo sea el planeta tierra “realista”
+Descripción de los requerimientos
+Elementos a incluir dentro del Escenario: (60%)
+
+Geometría: 
+o
+El escenario y los objetos deben de ser en 3D, pueden ser totalmente carga de 
+modelos o usando geometrías creadas por los alumnos con Código en OpenGL. 
+o
+El avatar: Se tendrá un personaje principal creado de forma jerárquica
+o
+Jerarquía: Debe de haber elementos en el escenario que estén creados de forma 
+jerárquica.
+o
+Ambientación del escenario: Debe de haber elementos representativos de la zona 
+abierta elegida a representar tales como luminarias, botes de basura, bancas, 
+vitrinas, árboles, reliquias de piedra, etc..
+o
+NPCS: Debe de haber modelos que representen a otros seres vivos humanoides en 
+el escenario.
+o
+Otros protagonistas: Los personajes elegidos por los integrantes que no sean el 
+avatar deberán de estar también presentes en el escenario.
+
+Texturizado:
+o
+Todos los elementos del escenario deben de estar correctamente texturizados y 
+debe de recordar a los universos de los personajes elegidos.
+
+Avatar:
+o
+Se debe de tener un avatar que represente al personaje principal, dicho avatar 
+debe de estar creado de forma jerárquica considerando los elementos básicos de 
+un humanoide, en caso de ser su personaje un no humanoide, tratar de ser lo más 
+fieles posibles al personaje.
+--- Pagina 2 ---
+o
+Dicho avatar debe contar con textura y aplicación de algún material adicional que 
+le permita interactuar con las luces del escenario.
+o
+El avatar debe de estar animado  con movimiento de caminata.
+
+Recorrido Total: 
+o
+El usuario podrá recorrer el escenario con un estilo de cámara de 3era persona 
+ligada a un plano paralelo al plano XZ que representa el piso. 
+o
+Un segundo recorrido  podrá hacer cambio a una cámara aérea que permitirá 
+mostrar el escenario  de forma parcial y permite desplazarse sobre un plano XZ.
+o
+Un tercer recorrido permitirá mostrar por lo menos 3 elementos de interés dentro 
+del escenario sin afectar al avatar.
+
+Iluminación y materiales:
+o
+La luz direccional irá simulando un ciclo de día y noche como si fuera un sol y se 
+verá reflejado en los materiales de todos los elementos 
+o
+Se debe de contar con luminarias en el escenario las cuales deberán de ser de tipo 
+puntual y se prenderán y apagarán al mismo tiempo en base al ciclo de tiempo día 
+y noche ( máximo dos minutos ).
+o
+De acuerdo a ese ciclo de día y noche, el skybox deberá de reflejar ese cambio en 
+las texturas.
+o
+Se deberán de tener luces de tipo Spotlight que se puedan prender y apagar con 
+teclado.
+
+Animación:
+o
+Animación Básica: Deberán de tener tres objetos (NPC o ser vivo no son objetos) 
+animados que se puedan iniciar usando teclado.
+o
+Animación Compleja: Deberán de tener tres objetos (NPC o ser vivo no son 
+objetos) animados en el escenario que tenga un ciclo de animación continua 
+basado en funciones o algoritmos.
+o
+Animación por keyframes: Se deberá de tener dos objetos animados por medio de 
+keyframes que no sea de tipo ser vivo o humanoide.
+
+Estilo Visual
+o
+El escenario tiene todos los elementos añadidos con estilo visual de universo de 
+cada uno de los personajes y los elementos de las temáticas “literario” y 
+“Tecnología a Vapor” fueron integrados de forma adecuada
+
+Audio:
+o
+Soundtrack: Pista de audio continua
+o
+Ambiental: Sonido ambiental propio del espacio presentado.
+o
+Efectos Especiales: Audio que se reproduce solamente cuando se cumple una 
+cierta condición.
+
+Adicionales
+o
+Originalidad y Creatividad: Elementos adicionales a los requeridos para hacer que 
+el escenario destaque
+o
+Animaciones adicionales: Animaciones complejas y keyframes adicionale
+--- Pagina 3 ---
+Metodología de desarrollo (40%)
+
+Planeación:
+o
+Sistema de almacenamiento: Los alumnos deberán de utilizar un repositorio de control 
+de versiones en el cual tendrán almacenadas en varias subramas por alumno las 
+versiones de su proyecto para demostrar cómo fueron avanzando en su proyecto. 
+Adicional al repositorio de control de versiones podrán utilizar una carpeta de 
+almacenamiento para manejar modelos e imágenes si es que el control de versiones 
+les da problemas con los elementos de estos formatos.
+o
+Se entrega un documento en el cual muestren con capturas de pantalla el uso de su 
+repositorio de control de versiones, su organización de trabajo colaborativo durante el 
+semestre  y el uso de la carpeta de almacenamiento adicional si fue necesario.
+o
+Plano/mapa/boceto con el diseño del escenario a crear usando simbología, se entrega 
+el miércoles 11 de Marzo en la plataforma de Google Classroom.
+o
+Documento de propuesta: Los alumnos entregarán el día miércoles 18 de Marzo en la 
+plataforma de Google Classroom la propuesta de su proyecto a desarrollar 
+describiendo a detalle como implementarán los “Elementos a incluir dentro del 
+escenario” e incluyendo en las últimas páginas el Plano/mapa/boceto anteriormente 
+evaluado con correcciones, comentario, conclusión y bibliografía.
+
+Desarrollo:
+o
+Entrega final del proyecto el día Martes 26 de Mayo en Classroom y si se requiere 
+el viernes 29 de Mayo en ejecución en el salón de clase. 
+o
+Ejecutable de Release: Archivo de tipo Exe el cual permite ejecutar el proyecto sin 
+necesidad de compilar. Para su correcto funcionamiento se requiere el Código fuente bien 
+comentado, estructurado y limpio, los modelos, texturas y archivos adicionales.
+o
+Manual de usuario: Manual con capturas de pantalla donde se indique a un 
+usuario cómo se puede utilizar el proyecto una vez ejecutado usando el teclado y mouse y 
+explorar todos los elementos que contiene.
+o
+Manual técnico de desarrollo: Manual en el cual explican por medio de capturas 
+de pantalla y bloques de código cómo se cubrieron los puntos requeridos en el apartado 
+de “Elementos a incluir dentro del Escenario”, apartado de conclusiones individuales, 
+conclusión grupal y Bibliografía.
+o
+Bitácoras: Cada alumno entregará una bitácora individual  describiendo en cada 
+día de trabajo: qué me propongo hacer, qué hice y en cuánto tiempo lo hice (horas 
+trabajadas).
+o
+Video: Un video en donde se muestra la funcionalidad completa de su proyecto 
+final, sin narración de voz. 
+--- Pagina 4 ---
+Rúbrica de evaluación
+
+Elementos a incluir dentro del Escenario (60 %)
+
+Geometría: 
+o
+El escenario y los objetos deben de ser en 3D, pueden ser totalmente carga de 
+modelos o usando geometrías creadas por los alumnos con Código en OpenGL.  
+(10 puntos)
+o
+Jerarquía: Debe de haber elementos en el escenario que estén creados de forma 
+jerárquica. ( 10 puntos)
+o
+Ambientación del escenario: Debe de haber elementos representativos de la zona 
+abierta elegida a representar tales como luminarias, botes de basura, bancas, 
+vitrinas, árboles, reliquias de piedra, etc.. (30 puntos)
+o
+NPCS: Debe de haber modelos que representen a otros seres vivos humanoides en 
+el escenario. ( 10 puntos)
+o
+Otros protagonistas: Los personajes elegidos por los integrantes que no sean el 
+avatar deberán de estar también presentes en el escenario. ( 10 puntos)
+
+Texturizado:
+o
+Todos los elementos del escenario deben de estar correctamente texturizados y 
+debe de recordar a los universos de los personajes elegidos. ( 20 puntos)
+
+Avatar:
+o
+Se debe de tener un avatar que represente al personaje principal, dicho avatar 
+debe de estar creado de forma jerárquica considerando los elementos básicos de 
+un humanoide, en caso de ser su personaje un no humanoide, tratar de ser lo más 
+fieles posibles al personaje. ( 10 puntos)
+o
+Dicho avatar debe contar con textura y aplicación de algún material adicional que 
+le permita interactuar con las luces del escenario. ( 10 puntos)
+o
+El avatar debe de estar animado con movimiento de caminata. ( 10 puntos)
+
+Recorrido Total: 
+o
+El usuario podrá recorrer el escenario con un estilo de cámara de 3era persona 
+ligada a un plano paralelo al plano XZ que representa el piso.  (10 puntos)
+o
+Un segundo recorrido  podrá hacer cambio a una cámara aérea que permitirá 
+mostrar el escenario  de forma parcial y permite desplazarse sobre un plano XZ. 
+(10 puntos)
+o
+Un tercer recorrido permitirá mostrar elementos de interés dentro del escenario 
+sin afectar al avatar. ( 10 puntos)
+o
+Correcto cambio de cámaras ( 10 puntos)
+
+Iluminación y materiales:
+o
+La luz direccional irá simulando un ciclo de día y noche como si fuera un sol y se 
+verá reflejado en los materiales de todos los elementos  ( 10 puntos)
+o
+Se debe de contar con luminarias en el escenario las cuales deberán de ser de tipo 
+puntual y se prenderán y apagarán al mismo tiempo en base al ciclo de tiempo día 
+y noche ( máximo dos minutos ). ( 20 puntos)
+o
+De acuerdo a ese ciclo de día y noche, el skybox deberá de reflejar ese cambio en 
+las texturas. ( 10 puntos)
+--- Pagina 5 ---
+o
+Se deberán de tener luces de tipo Spotlight que se puedan prender y apagar con 
+teclado. ( 10 puntos)
+
+Animación:
+o
+Animación Básica: Deberán de tener tres objetos animados que se puedan iniciar 
+usando teclado. ( 30 puntos)
+o
+Animación Compleja: Deberán de tener tres objetos animado en el escenario que 
+tenga un ciclo de animación continua basado en funciones o algoritmos. ( 30 
+puntos)
+o
+Animación por keyframes: Se deberá de tener dos objetos animado por medio de 
+keyframes que no sea de tipo ser vivo o humanoide. (20 puntos)
+
+Estilo Visual
+o
+El escenario tiene todos los elementos añadidos con estilo visual de universo de 
+cada uno de los personajes y los elementos de las temáticas “literario” y 
+“Tecnología a Vapor” fueron integrados de forma adecuada (30 puntos)
+
+Audio:
+o
+Soundtrack: Pista de audio continua (10 puntos)
+o
+Ambiental: Sonido ambiental propio del espacio presentado. (10 puntos)
+o
+Efectos Especiales: Audio que se reproduce solamente cuando se cumple una 
+cierta condición. (10 puntos)
+
+Adicionales
+o
+Originalidad y Creatividad: Elementos adicionales a los requeridos para hacer que 
+el escenario destaque ( hasta 10 puntos) 
+o
+Animaciones adicionales: Animaciones  complejas y keyframes adicionales (hasta 
+40 puntos)
+
+Total:  350 puntos representa el 10 de calificación en este rubro, se puede obtener hasta 400 
+puntos lo que da una calificación de 11.42 en este rubro. 
+
+Metodología de Desarrollo (40%)
+
+Planeación (20%)
+
+Sistema de almacenamiento 20 puntos: 10 puntos por 
+documento del manejo del repositorio de control de 
+versiones del proyecto y trabajo colaborativo.
+
+10 puntos por el contenido y manejo del repositorio de 
+control de versiones.
+
+Documento de propuesta corregido 10 puntos: por el 
+documento el cual es una versión modificada del documento 
+de propuesta.
+
+Plano/Mapa: 10 puntos: Dicho Plano/Mapa es una versión 
+final modificada.
+
+Total: 40 puntos representa el 10 de calificación. 
+
+Desarrollo (20%)
+--- Pagina 6 ---
+
+Ejecutable: 10 puntos: 5 puntos por la entrega del ejecutable 
+y 5 por la comprobación de funcionamiento sin errores.
+
+Manual de usuario 10 puntos.
+
+Manual Técnico de desarrollo 10 puntos.
+
+Bitácora Individual: 10 puntos.
+
+Video 20 puntos:  10 puntos por la entrega del video, 10 
+puntos por el contenido del video mostrando todos los 
+elementos del proyecto.
+
+Total: 60 puntos representa el 10 de calificación.
+Notas: 
+
+Dentro de los elementos a presentar en su proyecto final NO se contarán los objetos, 
+animaciones, texturas, iluminación presentada como ejercicios de clase o reportes de 
+prácticas.
+
+Si surge el dado caso de que los elementos presentados (excluyendo modelos 
+optimizados y texturas) no sean creados por los alumnos automáticamente el apartado 
+de “Elementos a incluir dentro del Escenario” tendrá calificación de CERO
+
+La fecha de entrega de los proyectos es inaplazable, los alumnos deberán de tomar en 
+cuenta esto para su entrega.
+
+Cualquier otra situación que surja se resolverá entre el profesor y los alumnos 
+involucrados.

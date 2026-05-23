@@ -45,7 +45,9 @@ void AnimatedModel::LoadModel(const std::string& fileName) {
         printf("AnimatedModel: fallo al cargar %s: %s\n", fileName.c_str(), importer.GetErrorString());
         return;
     }
-    globalInverse = glm::inverse(ToGlm(scene->mRootNode->mTransformation));
+    // GLTF/GLB: inverse bind matrices are already in world space,
+    // so globalInverse must be identity (not the scene root inverse).
+    globalInverse = glm::mat4(1.0f);
     LoadMeshes(scene);
     LoadMaterials(scene);
     LoadAnimations(scene);
@@ -97,10 +99,10 @@ void AnimatedModel::LoadSkinnedMesh(aiMesh* mesh) {
             verts.push_back(mesh->mTextureCoords[0][i].y);
         } else { verts.push_back(0); verts.push_back(0); }
         if (mesh->mNormals) {
-            verts.push_back(-mesh->mNormals[i].x);
-            verts.push_back(-mesh->mNormals[i].y);
-            verts.push_back(-mesh->mNormals[i].z);
-        } else { verts.push_back(0); verts.push_back(0); verts.push_back(-1); }
+            verts.push_back(mesh->mNormals[i].x);
+            verts.push_back(mesh->mNormals[i].y);
+            verts.push_back(mesh->mNormals[i].z);
+        } else { verts.push_back(0); verts.push_back(0); verts.push_back(1); }
         for (int k = 0; k < MAX_BONE_INFLUENCE; k++) verts.push_back(boneData[i].IDs[k]);
         for (int k = 0; k < MAX_BONE_INFLUENCE; k++) verts.push_back(boneData[i].Weights[k]);
     }
@@ -214,6 +216,12 @@ void AnimatedModel::LoadAnimations(const aiScene* sc) {
 int AnimatedModel::FindAnimation(const std::string& name) const {
     for (int i = 0; i < (int)clips.size(); i++)
         if (clips[i].name == name) return i;
+    // Substring match (handles names like "mixamo.com|walk" or "Armature|walk")
+    for (int i = 0; i < (int)clips.size(); i++)
+        if (clips[i].name.find(name) != std::string::npos) return i;
+    printf("AnimatedModel: animacion '%s' no encontrada. Disponibles:\n", name.c_str());
+    for (int i = 0; i < (int)clips.size(); i++)
+        printf("  [%d] %s\n", i, clips[i].name.c_str());
     return 0;
 }
 std::string AnimatedModel::GetAnimationName(int i) const {
@@ -268,7 +276,7 @@ glm::vec3 AnimatedModel::LerpScale(float t, const BoneChannel& ch) {
 }
 
 // -----------------------------------------------------------------------
-void AnimatedModel::Update(float timeSec, const std::string& animName) {
+void AnimatedModel::Update(float timeSec, const std::string& animName, bool inPlace) {
     if (clips.empty() || !scene) return;
     int idx = FindAnimation(animName);
     const AnimClip& clip = clips[idx];
@@ -277,11 +285,11 @@ void AnimatedModel::Update(float timeSec, const std::string& animName) {
     float timeInTicks = fmodf(timeSec * tps, clip.duration);
 
     for (auto& b : bones) b.FinalTransform = glm::mat4(1.0f);
-    TraverseNode(timeInTicks, clip, scene->mRootNode, glm::mat4(1.0f));
+    TraverseNode(timeInTicks, clip, scene->mRootNode, glm::mat4(1.0f), inPlace);
 }
 
 void AnimatedModel::TraverseNode(float tickTime, const AnimClip& clip,
-                                  aiNode* node, const glm::mat4& parentTransform)
+                                  aiNode* node, const glm::mat4& parentTransform, bool inPlace)
 {
     std::string nodeName(node->mName.data);
     glm::mat4 nodeTransform = ToGlm(node->mTransformation);
@@ -289,7 +297,13 @@ void AnimatedModel::TraverseNode(float tickTime, const AnimClip& clip,
     auto it = clip.channelMap.find(nodeName);
     if (it != clip.channelMap.end()) {
         const BoneChannel& ch = clip.channels[it->second];
-        glm::mat4 T = glm::translate(glm::mat4(1.0f), LerpPos(tickTime, ch));
+        glm::vec3 pos = LerpPos(tickTime, ch);
+        // Walk-in-place: eliminar desplazamiento X/Z del hueso Hips (root motion)
+        if (inPlace && nodeName.find("Hips") != std::string::npos) {
+            pos.x = 0.0f;
+            pos.z = 0.0f;
+        }
+        glm::mat4 T = glm::translate(glm::mat4(1.0f), pos);
         glm::mat4 R = glm::mat4_cast(NlerpRot(tickTime, ch));
         glm::mat4 S = glm::scale(glm::mat4(1.0f), LerpScale(tickTime, ch));
         nodeTransform = T * R * S;
@@ -304,7 +318,7 @@ void AnimatedModel::TraverseNode(float tickTime, const AnimClip& clip,
     }
 
     for (unsigned i = 0; i < node->mNumChildren; i++)
-        TraverseNode(tickTime, clip, node->mChildren[i], globalTransform);
+        TraverseNode(tickTime, clip, node->mChildren[i], globalTransform, inPlace);
 }
 
 // -----------------------------------------------------------------------
