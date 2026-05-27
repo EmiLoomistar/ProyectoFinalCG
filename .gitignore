@@ -1,0 +1,9 @@
+Models/
+Textures/
+docs/
+.vs/
+.claude/x64/  
+Debug/  
+*.obj  
+*.pdb  
+*.tlog 

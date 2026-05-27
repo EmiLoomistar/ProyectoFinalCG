@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c ' *)",
+      "Bash(winget install *)",
+      "Bash(py -3.12 -m pip install pymupdf --quiet)",
+      "PowerShell(py *)",
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"User\"\\); python --version)",
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"User\"\\); python -m pip install pymupdf --quiet 2>&1 | Select-Object -Last 5)",
+      "Read(//c/Users/rafao/OneDrive/Escritorio/Adicionales/**)",
+      "Bash(dir \"C:\\\\Users\\\\rafao\\\\OneDrive\\\\Escritorio\\\\Adicionales\")",
+      "Bash(python *)"
+    ]
+  }
+}
